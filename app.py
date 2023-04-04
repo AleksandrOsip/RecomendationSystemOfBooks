@@ -90,58 +90,58 @@ item_embeddings, nms_idx = load_embeddings()
 # Заголовок приложения
 st.title("Recomendation System Of Books")
 
-st.markdown("""Welcome to the web page of the book recommendation app!
-This application is a prototype of a recommendation system based on a machine learning model. 
+# st.markdown("""Welcome to the web page of the book recommendation app!
+# This application is a prototype of a recommendation system based on a machine learning model. 
 
-To use the application, you need:
-1. Enter the approximate name of the book you like
-2. Select its exact name in the pop-up list of books
-3. Specify the number of books you need to recommend
+# To use the application, you need:
+# 1. Enter the approximate name of the book you like
+# 2. Select its exact name in the pop-up list of books
+# 3. Specify the number of books you need to recommend
 
-After that, the application will give you a list of books most similar to the book you specified""")
+# After that, the application will give you a list of books most similar to the book you specified""")
 
-# Вводим строку для поиска книг
-title = st.text_input('Please enter book name')
-title = title.lower()
+# # Вводим строку для поиска книг
+# title = st.text_input('Please enter book name')
+# title = title.lower()
 
-#Выполняем поиск по книгам - ищем неполные совпадения
-output = books[books['title'].apply(lambda x: x.lower().find(title)) >= 0]
+# #Выполняем поиск по книгам - ищем неполные совпадения
+# output = books[books['title'].apply(lambda x: x.lower().find(title)) >= 0]
 
-#Выбор книги из списка
-option = st.selectbox("Select the book you need", output['title'].values)
+# #Выбор книги из списка
+# option = st.selectbox("Select the book you need", output['title'].values)
 
-#Проверяем, что поле не пустое
-if option:
-    #Выводим выбранную книгу
-    st.markdown('You selected: "{}"'.format(option))
+# #Проверяем, что поле не пустое
+# if option:
+#     #Выводим выбранную книгу
+#     st.markdown('You selected: "{}"'.format(option))
     
-    #Находим book_id для указанной книги
-    val_index = output[output['title'].values == option]['book_id'].values
+#     #Находим book_id для указанной книги
+#     val_index = output[output['title'].values == option]['book_id'].values
     
-    #Указываем количество рекомендаций
-    count_recomendation = st.number_input(
-        label="Specify the number of recommendations you need", 
-        value=10
-    )    
-    #Находим count_recomendation+1 наиболее похожих книг
-    ids, distances = nearest_books_nms(val_index, nms_idx, count_recomendation+1)
-    #Убираем из результатов книгу, по которой производился поиск
-    ids, distances = ids[1:], distances[1:]
+#     #Указываем количество рекомендаций
+#     count_recomendation = st.number_input(
+#         label="Specify the number of recommendations you need", 
+#         value=10
+#     )    
+#     #Находим count_recomendation+1 наиболее похожих книг
+#     ids, distances = nearest_books_nms(val_index, nms_idx, count_recomendation+1)
+#     #Убираем из результатов книгу, по которой производился поиск
+#     ids, distances = ids[1:], distances[1:]
     
-    #Выводим рекомендации к ней
-    st.markdown('Most simmilar books are: ')
-    #Составляем DataFrame из рекомендаций
-    df = get_recomendation_df(ids, distances, name_mapper, author_mapper)
-    #Выводим DataFrame в интерфейсе
-    st.dataframe(df[['book_name', 'book_author']])
+#     #Выводим рекомендации к ней
+#     st.markdown('Most simmilar books are: ')
+#     #Составляем DataFrame из рекомендаций
+#     df = get_recomendation_df(ids, distances, name_mapper, author_mapper)
+#     #Выводим DataFrame в интерфейсе
+#     st.dataframe(df[['book_name', 'book_author']])
     
-    # Строим столбчатую диаграмму
-    fig = px.bar(
-        data_frame=df, 
-        x='book_name', 
-        y='distance',
-        hover_data=['book_author'],
-        title='Cosine distance to the nearest books'
-    )
-    # Отображаем график в интерфейсе
-    st.write(fig)
+#     # Строим столбчатую диаграмму
+#     fig = px.bar(
+#         data_frame=df, 
+#         x='book_name', 
+#         y='distance',
+#         hover_data=['book_author'],
+#         title='Cosine distance to the nearest books'
+#     )
+#     # Отображаем график в интерфейсе
+#     st.write(fig)
