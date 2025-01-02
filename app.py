@@ -3,12 +3,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import streamlit as st
-import numpy as np
+# import numpy as np
 import pandas as pd
-import lightfm as lf
-import nmslib
+# import lightfm as lf
+# import nmslib
+import hnswlib
 import pickle
-import scipy.sparse as sparse
+# import scipy.sparse as sparse
 import plotly.express as px
 
 # -----------------------------------------------------------------------------------------------------
@@ -31,8 +32,8 @@ def make_mappers(books):
     * Ключами первого словаря являются идентификаторы книг, а значениями - их названия;
     * Ключами второго словаря являются идентификаторы книг, а значениями - их авторы.
     """
-    name_mapper = dict(zip(books.book_id, books.title))
-    author_mapper = dict(zip(books.book_id, books.authors))
+    name_mapper = dict(zip(books['book_id'], books['title']))
+    author_mapper = dict(zip(books['book_id'], books['authors']))
 
     return name_mapper, author_mapper
 
@@ -45,7 +46,8 @@ def load_embeddings(file_name='item_embeddings.pkl'):
         item_embeddings = pickle.load(f)
 
     # Тут мы используем nmslib, чтобы создать наш быстрый knn
-    nms_idx = nmslib.init(method='hnsw', space='cosinesimil')
+    # nms_idx = nmslib.init(method='hnsw', space='cosinesimil')
+    nms_idx = hnswlib.init(method='hnsw', space='cosinesimil')
     nms_idx.addDataPointBatch(item_embeddings)
     nms_idx.createIndex(print_progress=True)
     return item_embeddings, nms_idx
@@ -88,7 +90,7 @@ item_embeddings, nms_idx = load_embeddings()
 # Реализуем интерфейс приложения
 
 # Заголовок приложения
-st.title("Recomendation System Of Books")
+st.title("""Recomendation System Of Books / Рекомендательная Система Книг""")
 
 st.markdown("""Welcome to the web page of the book recommendation app!
 This application is a prototype of a recommendation system based on a machine learning model. 
@@ -98,38 +100,48 @@ To use the application, you need:
 2. Select its exact name in the pop-up list of books
 3. Specify the number of books you need to recommend
 
-After that, the application will give you a list of books most similar to the book you specified""")
+After that, the application will give you a list of books most similar to the book you specified/
+            
+            Добро пожаловать на веб-страницу приложения для рекомендаций книг!
+Это приложение является прототипом рекомендательной системы, основанной на модели машинного обучения. 
+
+Чтобы воспользоваться приложением, вам необходимо:
+1. Введите приблизительное название понравившейся книги
+2. Выберите ее точное название во всплывающем списке книг
+3. Укажите количество книг, которые вы хотите порекомендовать
+
+После этого приложение выдаст вам список книг, наиболее похожих на указанную вами книгу""")
 
 # Вводим строку для поиска книг
-title = st.text_input('Please enter book name')
+title = st.text_input('Please enter book name / Пожалуйста, введите название книги')
 title = title.lower()
 
 #Выполняем поиск по книгам - ищем неполные совпадения
 output = books[books['title'].apply(lambda x: x.lower().find(title)) >= 0]
 
 #Выбор книги из списка
-option = st.selectbox("Select the book you need", output['title'].values)
+option = st.selectbox("Select the book you need / Выберите нужную вам книгу", output['title'].values)
 
 #Проверяем, что поле не пустое
 if option:
     #Выводим выбранную книгу
-    st.markdown('You selected: "{}"'.format(option))
+    st.markdown('You selected / Вы выбрали: "{}"'.format(option))
     
     #Находим book_id для указанной книги
     val_index = output[output['title'].values == option]['book_id'].values
     
     #Указываем количество рекомендаций
     count_recomendation = st.number_input(
-        label="Specify the number of recommendations you need", 
-        value=10
-    )    
+                                          label="Specify the number of recommendations you need / Укажите количество необходимых вам рекомендаций", 
+                                          value=10
+                                          )    
     #Находим count_recomendation+1 наиболее похожих книг
     ids, distances = nearest_books_nms(val_index, nms_idx, count_recomendation+1)
     #Убираем из результатов книгу, по которой производился поиск
     ids, distances = ids[1:], distances[1:]
     
     #Выводим рекомендации к ней
-    st.markdown('Most simmilar books are: ')
+    st.markdown('Most simmilar books are / Большинство подобных книг - это: ')
     #Составляем DataFrame из рекомендаций
     df = get_recomendation_df(ids, distances, name_mapper, author_mapper)
     #Выводим DataFrame в интерфейсе
@@ -137,11 +149,11 @@ if option:
     
     # Строим столбчатую диаграмму
     fig = px.bar(
-        data_frame=df, 
-        x='book_name', 
-        y='distance',
-        hover_data=['book_author'],
-        title='Cosine distance to the nearest books'
-    )
+                 data_frame=df, 
+                 x='book_name', 
+                 y='distance',
+                 hover_data=['book_author'],
+                 title='Cosine distance to the nearest books'
+                 )
     # Отображаем график в интерфейсе
     st.write(fig)
